@@ -16,25 +16,35 @@ function convertirMoneda(monedaDestino, cantidad) {
             resultado = cantidad * 0.9667; // Cambio aproximado
             break;
         default:
-            resultado = 'No podemos efectuar el calculo de esta moneda';
+            resultado = 'No podemos efectuar el cálculo de esta moneda';
     }
     return resultado;
 }
 
 function resultado() {
-    let pesosArgentinos = prompt('Ingrese la cantidad de pesos argentinos que desea convertir:');
-    pesosArgentinos = parseFloat(pesosArgentinos);
+    let continuar = true;
 
-    let monedaDestino = prompt('Ingrese la moneda a la que desea convertir (USD, EUR, CLP):');
+    while (continuar) {
+        let pesosArgentinos = prompt('Ingrese la cantidad de pesos argentinos que desea convertir:');
+        pesosArgentinos = parseFloat(pesosArgentinos);
 
-    let resultado = convertirMoneda(monedaDestino, pesosArgentinos);
+        let monedaDestino = prompt('Ingrese la moneda a la que desea convertir (USD, EUR, CLP):');
 
-    if (typeof resultado === 'number') {
-        alert(`${pesosArgentinos} pesos argentinos son aproximadamente ${resultado.toFixed(2)} ${monedaDestino.toUpperCase()}.`);
-        alert('¡Gracias por usar nuestros servicios de conversión de monedas!');
-    } else {
-        alert(resultado); // Moneda no valida
+        let resultadoConversion = convertirMoneda(monedaDestino, pesosArgentinos);
+
+        if (typeof resultadoConversion === 'number') {
+            alert(`${pesosArgentinos} pesos argentinos son aproximadamente ${resultadoConversion.toFixed(2)} ${monedaDestino.toUpperCase()}.`);
+            let continuarInput = prompt('¿Desea realizar otra conversión? (Sí/No)').toLowerCase();
+            if (continuarInput !== 'sí' && continuarInput !== 'si') {
+                continuar = false;
+            }
+        } else {
+            alert(resultadoConversion); // Moneda no válida
+            continuar = false; // Terminar el bucle si hay un error
+        }
     }
+
+    alert('¡Gracias por usar nuestros servicios de conversión de monedas!');
 }
 
 resultado();

@@ -4,87 +4,59 @@
 // Tiene contemplado el uso de mayusculas o minusculas y decimales.
 
 
-// Objeto para almacenar las tasas de cambio
-const tasasDeCambio = {
-    usd: 0.00072,   // Dólar americano
-    eur: 0.001,     // euro
-    clp: 0.9667,    // Peso chileno
-    gbp: 0.00052,   // Libra esterlina
-    aud: 0.00098,   // Dólar australiano
-    cad: 0.00091,   // Dólar canadiense
-    jpy: 0.079,     // Yen japonés
-    cny: 0.0046     // Yuan chino
-};
+document.addEventListener('DOMContentLoaded', () => {
+    let tasasDeCambio = {};
 
-// Array de monedas válidas
-const monedasValidas = ['usd', 'eur', 'clp', 'gbp', 'aud', 'cad', 'jpy', 'cny'];
-
-// Función para convertir moneda
-function convertirMoneda(monedaDestino, cantidad) {
-    // Convertir la moneda destino a minúsculas para ser case-insensitive
-    monedaDestino = monedaDestino.toLowerCase();
-
-    if (tasasDeCambio.hasOwnProperty(monedaDestino)) {
-        return cantidad * tasasDeCambio[monedaDestino];
-    } else {
-        return 'No podemos efectuar el cálculo para esta moneda';
-    }
-}
-
-// Función para buscar una moneda en el array de monedas válidas
-function buscarMoneda(moneda) {
-    // Convertir la moneda a minúsculas para ser case-insensitive
-    moneda = moneda.toLowerCase();
-    
-    // Buscar la moneda en el array
-    let monedaEncontrada = monedasValidas.find(m => m === moneda);
-    
-    if (monedaEncontrada) {
-        return `${moneda.toUpperCase()} encontrada en la lista de monedas válidas.`;
-    } else {
-        return `${moneda.toUpperCase()} no encontrada en la lista de monedas válidas.`;
-    }
-}
-
-// Función para filtrar monedas por longitud del nombre
-function filtrarMonedasPorLongitud(minLongitud) {
-    // Filtrar monedas cuyos nombres tengan una longitud mayor o igual a minLongitud
-    let monedasFiltradas = monedasValidas.filter(m => m.length >= minLongitud);
-    
-    return monedasFiltradas;
-}
-
-// Función principal para ejecutar la conversión
-function resultado() {
-    let continuar = true;
-
-    while (continuar) {
-        let pesosArgentinos = prompt('Ingrese la cantidad de pesos argentinos que desea convertir:');
-        pesosArgentinos = parseFloat(pesosArgentinos);
-
-        let monedaDestino = prompt('Ingrese la moneda a la que desea convertir (USD, EUR, CLP, GBP, AUD, CAD, JPY, CNY):').toLowerCase();
-
-        if (monedasValidas.includes(monedaDestino)) {
-            let resultadoConversion = convertirMoneda(monedaDestino, pesosArgentinos);
-
-            if (typeof resultadoConversion === 'number') {
-                alert(`${pesosArgentinos} pesos argentinos son aproximadamente ${resultadoConversion.toFixed(2)} ${monedaDestino.toUpperCase()}.`);
-                let continuarInput = prompt('¿Desea realizar otra conversión? (Sí/No)').toLowerCase();
-                if (continuarInput !== 'sí' && continuarInput !== 'si') {
-                    continuar = false;
-                }
-            } else {
-                alert(resultadoConversion); // Moneda no válida
-                continuar = false; // Terminar el bucle si hay un error
-            }
+    async function cargarTasasDeCambio() {
+        const tasasDeCambioEnLocalStorage = localStorage.getItem('tasasDeCambio');
+        if (tasasDeCambioEnLocalStorage) {
+            tasasDeCambio = JSON.parse(tasasDeCambioEnLocalStorage);
         } else {
-            alert('Moneda ingresada no válida. Por favor ingrese una de las siguientes opciones: USD, EUR, CLP, GBP, AUD, CAD, JPY, CNY.');
-            continuar = false; // Terminar el bucle si la moneda no es válida
+            try {
+                const response = await fetch('tasasDeCambio.json');
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el archivo JSON');
+                }
+                tasasDeCambio = await response.json();
+                guardarDatos();  // Guarda el JSON en localStorage para futuras sesiones
+            } catch (error) {
+                console.error('Error cargando tasas de cambio:', error);
+            }
         }
     }
 
-    alert('¡Gracias por usar nuestros servicios de conversión de monedas!');
-}
+    function guardarDatos() {
+        const tasasDeCambioJSON = JSON.stringify(tasasDeCambio);
+        localStorage.setItem('tasasDeCambio', tasasDeCambioJSON);
+    }
 
-// Ejecutar la función principal para iniciar el programa
-resultado();
+    function convertirMoneda(monedaDestino, cantidad) {
+        monedaDestino = monedaDestino.toLowerCase();
+        const tasa = tasasDeCambio[monedaDestino];
+        return tasa ? cantidad * tasa : 'No podemos efectuar el cálculo para esta moneda';
+    }
+
+    function manejarFormulario(event) {
+        event.preventDefault();
+
+        const pesosArgentinos = parseFloat(document.getElementById('pesosArgentinos').value);
+        const monedaDestino = document.getElementById('monedaDestino').value;
+        const resultElement = document.getElementById('result');
+
+        if (isNaN(pesosArgentinos) || pesosArgentinos <= 0) {
+            resultElement.textContent = 'Por favor, ingrese una cantidad válida de pesos argentinos.';
+            return;
+        }
+
+        if (Object.keys(tasasDeCambio).includes(monedaDestino)) {
+            const resultadoConversion = convertirMoneda(monedaDestino, pesosArgentinos);
+            resultElement.textContent = `${pesosArgentinos} pesos argentinos son aproximadamente ${resultadoConversion.toFixed(2)} ${monedaDestino.toUpperCase()}.`;
+        } else {
+            resultElement.textContent = 'Moneda ingresada no válida.';
+        }
+    }
+
+    document.getElementById('conversionForm').addEventListener('submit', manejarFormulario);
+
+    cargarTasasDeCambio();
+});
